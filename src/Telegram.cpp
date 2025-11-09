@@ -5,8 +5,8 @@
 
 static const char* keyboard =
 "["
-"  [\"ON\", \"OFF\"],"
-"  [\"Weather Mode\", \"Full Brightness\"]"
+"  [\"Weather Mode\", \"Full Brightness\"],"
+"  [\"OFF\"]"
 "]";
 
 
@@ -45,12 +45,7 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     return;
   }
 
-  if(text == "on" ){
-    oldCheck();
-    bot.sendMessage(msg_id, "Turned ON! 💡");
-  }
-
-  else if(text == "off"){
+  if(text == "off"){
     digitalWrite(LED_TEST, LOW);
     saveMode(0);
     fullBri = weatherOption = false;
