@@ -6,5 +6,6 @@
 
 void handleMessage(UniversalTelegramBot &bot, int index);
 void logicHandling(UniversalTelegramBot &bot, const String &text, const String &msg_id);
+void saveMode();
 
 #endif
