@@ -6,7 +6,6 @@
 #include <ESP8266HTTPClient.h>
 #include <UniversalTelegramBot.h>
 
-#define LED_WIFI 2
 #define LED_TEST D5
 
 extern WiFiClientSecure client;

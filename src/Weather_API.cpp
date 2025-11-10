@@ -6,7 +6,6 @@
 SunData apiCall(){
 
     SunData data;
-    data.valid = false;
 
     http.begin(client, WAPI);
     int code = http.GET();
@@ -17,7 +16,6 @@ SunData apiCall(){
 
         if(JSON.typeof(document)!= "undefined"){
 
-            data.valid = true;
             String sr = (const char*)document["daily"]["sunrise"][0];
             int pos = sr.indexOf("T");
             String srtime = sr.substring(pos+1);

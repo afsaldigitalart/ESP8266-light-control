@@ -2,11 +2,12 @@
 #include <Telegram.h>
 #include <EEPROM.h>
 #include <main.h>
+#include <Weather_API.h>
 
 static const char* keyboard =
 "["
 "  [\"Weather Mode\", \"Full Brightness\"],"
-"  [\"OFF\"]"
+"  [\"Status\"], [\"OFF\"]"
 "]";
 
 
@@ -47,9 +48,9 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
 
   if(text == "off"){
     digitalWrite(LED_TEST, LOW);
-    saveMode(0);
-    fullBri = weatherOption = false;
+    fullBri = weatherOption = customBri = false;
     bot.sendMessage(msg_id, "Turned OFF ❌");
+    saveMode(0);
   }
 
   else if(text == "hi" || text == "hello"){
@@ -57,17 +58,76 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
   }
 
   else if(text == "weather mode" || text == "weathermode"){
-    if(fullBri) fullBri = false;
+    if(fullBri || customBri) fullBri = customBri = false;
     weatherOption = true;
-    saveMode(1);
     bot.sendMessage(msg_id, "☁️ Weather Mode Activated!");
+    saveMode(1);
   }
 
   else if(text == "full brightness" || text == "fullbrightness"){
-    if(weatherOption) weatherOption = false;
+    if(weatherOption || customBri) weatherOption = customBri = false;
     fullBri = true;
-    saveMode(2);
     bot.sendMessage(msg_id, "⚡ Fulllyyyy On mwone! ");
+    saveMode(2);
+  }
+
+  else if (isNumber(text)){
+
+    int num = 0;
+    for (int i = 0; i < text.length(); i++) {
+    char c = text[i];
+    if (c < '0' || c > '9') break;
+    num = num * 10 + (c - '0');
+    }
+
+    if (num < 0 || num > 100) bot.sendMessage(msg_id, "Between 0 and 100 brooo");
+    
+    else{
+      if(weatherOption || fullBri) weatherOption = fullBri = false;
+      customBri = true;
+
+      setBrightness(num);
+      bot.sendMessage(msg_id, "Brightness set to " + text);
+      saveMode(3);
+
+    }
+  }
+
+  else if(text == "/help" || text == "help"){
+    bot.sendMessage(msg_id, "Do /start to activate the Keyboard ⌨️\n"
+    "Send numbers (0-100) to set custom Brightness! 🔅\n"
+    "/status to get Current Details 📑"
+  );
+
+  }
+
+  else if(text == "/status" || text == "status"){
+    
+    String msg;
+    int time_hr = currentTime()/60;
+    int time_mts = currentTime()%60;
+
+    String time_now = time_hr + ":" + time_mts;
+
+    msg  = "*Current Status*\n";
+    msg += "🔅 _Brightness Level_: ";
+    msg += String((currentBri * 100) / 1023);
+    msg += "%\n";
+    msg += "⚠️ _Sun Radiation Level_: ";
+    msg += String(currentRad);
+    msg += "%\n";
+    msg += "🌅 _Sunrise Time (GMT 5:30)_: ";
+    msg += sunriseTime;
+    msg += "%\n";
+    msg += "🌇 _Sunset Time (GMT 5:30)_: ";
+    msg += sunsetTime;
+    msg += "%\n";
+    msg += "⌚ _Current Time_: ";
+    msg += time_now;
+    msg += "%\n";
+
+    bot.sendMessage(msg_id, msg, "Markdown");
+  
   }
 
   else{

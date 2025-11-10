@@ -5,7 +5,6 @@ struct SunData{
     int sunrise;
     int sunset;
     int radiation;
-    bool valid;
 };
 
 SunData apiCall();
