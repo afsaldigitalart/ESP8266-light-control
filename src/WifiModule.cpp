@@ -1,9 +1,10 @@
 #include <ESP8266WiFi.h>
 #include <config.h>
 
+//if you dont understand what is going on here.. you dumb
 void setupWifi(){
 
-    WiFi.hostname("ESP8266 of AFSAL");
+    WiFi.hostname("ESP8266");
     WiFi.mode(WIFI_STA);
 
     WiFi.setAutoReconnect(true);

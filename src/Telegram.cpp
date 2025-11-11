@@ -4,20 +4,27 @@
 #include <main.h>
 #include <Weather_API.h>
 
+
+// Everything which is needed for the telegram bot is in here
+
+//They keyboard which shows all the default option
 static const char* keyboard =
 "["
 "  [\"Weather Mode\", \"Full Brightness\"],"
 "  [\"Status\"], [\"OFF\"]"
 "]";
 
-
 void saveMode(uint8_t mode){
+
+  //For saving the current mode in EEPROM memory, to continiue the same after a boot up
   EEPROM.write(0, mode);
   EEPROM.commit();
 }
 
 void handleMessage(UniversalTelegramBot &bot, int index){
   
+  //Core logics for handling the messages recived on Telegram
+  //This function Pre Proccesses the text for handling
   bool allowed = false;
   auto &msg = bot.messages[index];
   String msg_id = msg.chat_id;
@@ -39,8 +46,11 @@ void handleMessage(UniversalTelegramBot &bot, int index){
   logicHandling(bot, text, msg_id);
 }
 
+
 void logicHandling(UniversalTelegramBot &bot, const String &text, const String &msg_id ){
 
+  //Part of the previous function. This one actually checks the message and act according to it..
+  //BLOCKS OF IF ELSE STATEMENTS AHEAD
   if (text == "/start"){
     bot.sendMessageWithReplyKeyboard(msg_id, "Pick an Option:", "", keyboard, false);
     return;
@@ -74,7 +84,7 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
   else if (isNumber(text)){
 
     int num = 0;
-    for (int i = 0; i < text.length(); i++) {
+    for (unsigned int i = 0; i < text.length(); i++) {
     char c = text[i];
     if (c < '0' || c > '9') break;
     num = num * 10 + (c - '0');
@@ -85,18 +95,19 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     else{
       if(weatherOption || fullBri) weatherOption = fullBri = false;
       customBri = true;
+      currentBri = num;
 
       setBrightness(num);
-      bot.sendMessage(msg_id, "Brightness set to " + text);
+      bot.sendMessage(msg_id, "💡 Brightness set to " + text);
       saveMode(3);
 
     }
   }
 
   else if(text == "/help" || text == "help"){
-    bot.sendMessage(msg_id, "Do /start to activate the Keyboard ⌨️\n"
-    "Send numbers (0-100) to set custom Brightness! 🔅\n"
-    "/status to get Current Details 📑"
+    bot.sendMessage(msg_id, "◆ Do /start to activate the Keyboard ⌨️\n"
+    "◆ Send numbers (0-100) to set custom Brightness! 🔅\n"
+    "◆ /status to get Current Details 📑"
   );
 
   }
@@ -104,27 +115,23 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
   else if(text == "/status" || text == "status"){
     
     String msg;
-    int time_hr = currentTime()/60;
-    int time_mts = currentTime()%60;
-
-    String time_now = time_hr + ":" + time_mts;
 
     msg  = "*Current Status*\n";
-    msg += "🔅 _Brightness Level_: ";
+    msg += "➤ 🔅 _Brightness Level_: ";
     msg += String((currentBri * 100) / 1023);
     msg += "%\n";
-    msg += "⚠️ _Sun Radiation Level_: ";
+    msg += "➤ ⚠️ _Sun Radiation Level_: ";
     msg += String(currentRad);
-    msg += "%\n";
-    msg += "🌅 _Sunrise Time (GMT 5:30)_: ";
-    msg += sunriseTime;
-    msg += "%\n";
-    msg += "🌇 _Sunset Time (GMT 5:30)_: ";
-    msg += sunsetTime;
-    msg += "%\n";
-    msg += "⌚ _Current Time_: ";
-    msg += time_now;
-    msg += "%\n";
+    msg += "\n";
+    msg += "➤ 🌅 _Sunrise Time_: ";
+    msg += mts_to_time(sunriseTime);
+    msg += "\n";
+    msg += "➤ 🌇 _Sunset Time_: ";
+    msg += mts_to_time(sunsetTime);
+    msg += "\n";
+    msg += "➤ ⌚ _Current Time_: ";
+    msg += mts_to_time(currentTime());
+    msg += "\n";
 
     bot.sendMessage(msg_id, msg, "Markdown");
   

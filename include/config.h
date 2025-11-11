@@ -23,5 +23,6 @@ extern const char* allowedChatId[];
 extern int allowedCount;
 extern const unsigned long intervalSun;
 extern const unsigned long intervalBOT;
+const float alpha;
 
 #endif
