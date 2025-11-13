@@ -58,7 +58,7 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
 
   if(text == "off"){
     digitalWrite(LED_TEST, LOW);
-    fullBri = weatherOption = customBri = false;
+    currentMode = off;
     bot.sendMessage(msg_id, "Turned OFF ❌");
     saveMode(0);
   }
@@ -68,15 +68,13 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
   }
 
   else if(text == "weather mode" || text == "weathermode"){
-    if(fullBri || customBri) fullBri = customBri = false;
-    weatherOption = true;
+   currentMode = weatherOption;
     bot.sendMessage(msg_id, "☁️ Weather Mode Activated!");
     saveMode(1);
   }
 
   else if(text == "full brightness" || text == "fullbrightness"){
-    if(weatherOption || customBri) weatherOption = customBri = false;
-    fullBri = true;
+    currentMode = fullBri;
     bot.sendMessage(msg_id, "⚡ Fulllyyyy On mwone! ");
     saveMode(2);
   }
@@ -93,8 +91,7 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     if (num < 0 || num > 100) bot.sendMessage(msg_id, "Between 0 and 100 brooo");
     
     else{
-      if(weatherOption || fullBri) weatherOption = fullBri = false;
-      customBri = true;
+      currentMode = CustomBri;
       currentBri = num;
 
       setBrightness(num);

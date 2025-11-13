@@ -4,9 +4,17 @@
 #include <Arduino.h>         
 #include <UniversalTelegramBot.h>
 
-extern bool weatherOption;
-extern bool fullBri;
-extern bool customBri;
+enum MODE{
+  off,
+  weatherOption,
+  fullBri,
+  CustomBri
+};
+MODE currentMode;
+
+// extern bool weatherOption;
+// extern bool fullBri;
+// extern bool customBri;
 extern int currentBri;
 extern float currentRad;
 extern int sunriseTime;

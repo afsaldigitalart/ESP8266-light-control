@@ -6,6 +6,7 @@
 #include <EEPROM.h>
 #include <string>
 #include <cctype>
+#include <main.h>
 
 //This is super complex and I dont know that is going on anymore
 
@@ -16,9 +17,17 @@ int lastUpdateId = 0;
 float currentRad;
 SunData data;
 
-bool weatherOption = false;
-bool fullBri = false;
-bool customBri = true;
+int customTimeON_hr;
+int customTimeON_mm;
+int customTimeOFF_hr;
+int customTimeOFF_mm;
+char* CT_state;
+
+// bool weatherOption = false;
+// bool fullBri = false;
+// bool customBri = true;
+// bool customTimeOFF =  false;
+// bool customTimeON =  false;
 
 int sunriseTime, sunsetTime;
 int srstart = -1, srend = -1, ssstart = -1, ssend = -1;
@@ -90,18 +99,17 @@ void oldCheck(){
   uint8_t mode = EEPROM.read(0);
 
   switch(mode){
-    case 0:   fullBri = false; weatherOption = false;customBri = false; break;
-    case 1:   weatherOption = true; fullBri = false;customBri = false;  break;
-    case 2:   fullBri = true; weatherOption = false;customBri = false; break;
-    case 3:   fullBri = false; weatherOption = false; customBri = true; break;
+    case 0: currentMode = off; break;
+    case 1: currentMode = weatherOption;  break;
+    case 2: currentMode = fullBri; break;
+    case 3: currentMode = CustomBri; break;
   }
 }
 
 void setBrightness(int lvl){
 
   //For setting Custom Brightness according to the input
-  if(weatherOption || fullBri) weatherOption = fullBri = false;
-  customBri = true;
+  currentMode = CustomBri;
 
   int brighness = map(lvl, 0, 100, 0, 1023);
   brighness = constrain(brighness, 0, 1023);
@@ -170,7 +178,10 @@ void FullBrightness(){
   currentBri = 1023;
 }
 
-
+void CheckStatusCustom(){
+  if (CT_state == "ON") oldCheck();
+  else digitalWrite(LED_TEST, LOW);
+}
 
 void setup() {
 
@@ -204,15 +215,13 @@ void setup() {
   sunsetTime = data.sunset;
   oldCheck();
 
-  if (customBri){
+  if (currentMode == CustomBri){
     uint8_t bri = EEPROM.read(1);
     targetBri = map(bri, 0, 100, 0, 1023);
     currentBri = targetBri;
   }
   
 }
-
-
 
 void loop() {
 
@@ -246,11 +255,11 @@ void loop() {
     sunsetTime = data.sunset;
   }
 
-  if (weatherOption) weatherMode();
+  if (currentMode == weatherOption) weatherMode();
   
-  else if(fullBri) FullBrightness();
+  else if(currentMode == fullBri) FullBrightness();
 
-  else if(customBri) smoothUpdate();
+  else if(currentMode == CustomBri) smoothUpdate();
 
   else analogWrite(LED_TEST, 0);
 
