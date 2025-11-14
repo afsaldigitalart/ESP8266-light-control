@@ -6,6 +6,7 @@
 #include <EEPROM.h>
 #include <string>
 #include <cctype>
+#include <main.h>
 
 //This is super complex and I dont know that is going on anymore
 
@@ -14,11 +15,11 @@ unsigned long lastcallSun = 0;
 unsigned long lastcallBOT = 0;
 int lastUpdateId = 0;
 float currentRad;
-SunData data;
 
-bool weatherOption = false;
-bool fullBri = false;
-bool customBri = true;
+SunData data;
+MODE currentMode = off;
+int CusTimeOn = 0;
+int CusTimeOff = 0;
 
 int sunriseTime, sunsetTime;
 int srstart = -1, srend = -1, ssstart = -1, ssend = -1;
@@ -31,6 +32,32 @@ int targetBri = 0;
 
 
 //HELPER FUNCTIONS
+
+
+int separator(String time, String sep){
+  int pos = time.indexOf(sep);
+  String Ttime = time.substring(pos+1);
+  int hh = Ttime.substring(0,2).toInt();
+  int mm = Ttime.substring(3,5).toInt();
+  return hh*60+mm;
+}
+
+int CTseparator(String time, String sep){
+  int pos = time.indexOf(sep);
+  String right = time.substring(pos+1);
+  int hh = time.substring(0,pos).toInt();
+  int mm = right.toInt();
+  return hh*60+mm;
+}
+
+String mts_to_time(int mts){
+  //Converts the give minutes into Hour and Minutes Format
+  int time_hr = mts/60;
+  int time_mts = mts%60;
+
+  String time_now = String(time_hr) + ":" + String(time_mts);
+  return time_now; // returns in hh:mm format
+}
 
 float lerp(){
 
@@ -67,14 +94,6 @@ bool isNumber(const String &s) {
   return true; //Return Value: True if number else False
 }
 
-String mts_to_time(int mts){
-  //Converts the give minutes into Hour and Minutes Format
-  int time_hr = mts/60;
-  int time_mts = mts%60;
-
-  String time_now = String(time_hr) + ":" + String(time_mts);
-  return time_now; // returns in hh:mm format
-}
 
 void oldCheck(){
 
@@ -90,18 +109,17 @@ void oldCheck(){
   uint8_t mode = EEPROM.read(0);
 
   switch(mode){
-    case 0:   fullBri = false; weatherOption = false;customBri = false; break;
-    case 1:   weatherOption = true; fullBri = false;customBri = false;  break;
-    case 2:   fullBri = true; weatherOption = false;customBri = false; break;
-    case 3:   fullBri = false; weatherOption = false; customBri = true; break;
+    case 0: currentMode = off; break;
+    case 1: currentMode = weatherOption;  break;
+    case 2: currentMode = fullBri; break;
+    case 3: currentMode = CustomBri; break;
   }
 }
 
 void setBrightness(int lvl){
 
   //For setting Custom Brightness according to the input
-  if(weatherOption || fullBri) weatherOption = fullBri = false;
-  customBri = true;
+  currentMode = CustomBri;
 
   int brighness = map(lvl, 0, 100, 0, 1023);
   brighness = constrain(brighness, 0, 1023);
@@ -158,7 +176,7 @@ void weatherMode(){
     analogWrite(LED_TEST, constrain(currentRad, 0, 1023));
   }
 
-  if (strcmp(STATE,"DAY")==0 && data.radiation < 1 && currentTime()>ssend) {
+  if (strcmp(STATE,"DAY")==0 && currentTime()>ssend) {
     STATE = "NIGHT";
   }
   currentBri = currentRad;
@@ -170,6 +188,16 @@ void FullBrightness(){
   currentBri = 1023;
 }
 
+void customTime(){
+  if (currentTime() >= CusTimeOn){
+    oldCheck();
+    if (currentMode == off) currentMode= fullBri;
+  }
+
+  else if (currentTime() >= CusTimeOff){
+    digitalWrite(LED_TEST, LOW);
+  }
+}
 
 
 void setup() {
@@ -202,9 +230,10 @@ void setup() {
   currentRad = initdata.radiation;
   sunriseTime = data.sunrise;
   sunsetTime = data.sunset;
+
   oldCheck();
 
-  if (customBri){
+  if (currentMode == CustomBri){
     uint8_t bri = EEPROM.read(1);
     targetBri = map(bri, 0, 100, 0, 1023);
     currentBri = targetBri;
@@ -212,15 +241,14 @@ void setup() {
   
 }
 
-
-
 void loop() {
 
+  
   if (!isWifiConnected()) digitalWrite(LED_BUILTIN_AUX, LOW);
   else digitalWrite(LED_BUILTIN_AUX , HIGH); 
 
   
-  //Telegram Bot Polling Limi
+  //Telegram Bot Polling Limit
   if (millis() - lastcallBOT >= intervalBOT){
     int numNewMessages = bot.getUpdates(lastUpdateId+1);
     while(numNewMessages){
@@ -246,13 +274,21 @@ void loop() {
     sunsetTime = data.sunset;
   }
 
-  if (weatherOption) weatherMode();
+  if (currentMode == weatherOption) weatherMode();
   
-  else if(fullBri) FullBrightness();
+  else if(currentMode == fullBri) FullBrightness();
 
-  else if(customBri) smoothUpdate();
+  else if(currentMode == CustomBri) smoothUpdate();
+
+  else if(currentMode == CustomTime) customTime();
 
   else analogWrite(LED_TEST, 0);
+
+  Serial.print("STATE: "); Serial.println(STATE);
+  Serial.print("ssend: "); Serial.println(ssend);
+  Serial.print("ctime: "); Serial.println(currentTime());
+  Serial.print("radiation: "); Serial.println(data.radiation);
+
 
   delay(20);
 

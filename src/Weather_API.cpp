@@ -2,6 +2,7 @@
 #include <Arduino_JSON.h>
 #include <config.h>
 #include <Weather_API.h>
+#include <main.h>
 
 //Handles all The API thing.
 SunData apiCall(){
@@ -19,18 +20,10 @@ SunData apiCall(){
         if(JSON.typeof(document)!= "undefined"){
 
             String sr = (const char*)document["daily"]["sunrise"][0];
-            int pos = sr.indexOf("T");
-            String srtime = sr.substring(pos+1);
-            int h1 = srtime.substring(0,2).toInt();
-            int m1 = srtime.substring(3,5).toInt();
-            data.sunrise = h1*60+m1;
+            data.sunrise = separator(sr, "T");
 
             String ss = (const char*)document["daily"]["sunset"][0];
-            int pos2 = ss.indexOf("T");
-            String sstime = ss.substring(pos2+1);
-            int h2 = sstime.substring(0,2).toInt();
-            int m2 = sstime.substring(3,5).toInt();
-            data.sunset = h2*60+m2;
+            data.sunset = separator(ss, "T");
 
             data.radiation = (int)document["current"]["shortwave_radiation"];
         }
