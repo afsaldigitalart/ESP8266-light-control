@@ -46,7 +46,7 @@ float lerp(){
 void smoothUpdate(){
 
   // LERP for global light transition
-  currentBri = currentBri + alpha * (targetBri - currentBri);
+  currentBri = currentBri + 0.5 * (targetBri - currentBri);
   analogWrite(LED_TEST, currentBri);
 }
 
