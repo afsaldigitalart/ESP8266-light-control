@@ -15,19 +15,11 @@ unsigned long lastcallSun = 0;
 unsigned long lastcallBOT = 0;
 int lastUpdateId = 0;
 float currentRad;
+
 SunData data;
-
-int customTimeON_hr;
-int customTimeON_mm;
-int customTimeOFF_hr;
-int customTimeOFF_mm;
-char* CT_state;
-
-// bool weatherOption = false;
-// bool fullBri = false;
-// bool customBri = true;
-// bool customTimeOFF =  false;
-// bool customTimeON =  false;
+MODE currentMode = off;
+int CusTimeOn = 0;
+int CusTimeOff = 0;
 
 int sunriseTime, sunsetTime;
 int srstart = -1, srend = -1, ssstart = -1, ssend = -1;
@@ -40,6 +32,32 @@ int targetBri = 0;
 
 
 //HELPER FUNCTIONS
+
+
+int separator(String time, String sep){
+  int pos = time.indexOf(sep);
+  String Ttime = time.substring(pos+1);
+  int hh = Ttime.substring(0,2).toInt();
+  int mm = Ttime.substring(3,5).toInt();
+  return hh*60+mm;
+}
+
+int CTseparator(String time, String sep){
+  int pos = time.indexOf(sep);
+  String right = time.substring(pos+1);
+  int hh = time.substring(0,pos).toInt();
+  int mm = right.toInt();
+  return hh*60+mm;
+}
+
+String mts_to_time(int mts){
+  //Converts the give minutes into Hour and Minutes Format
+  int time_hr = mts/60;
+  int time_mts = mts%60;
+
+  String time_now = String(time_hr) + ":" + String(time_mts);
+  return time_now; // returns in hh:mm format
+}
 
 float lerp(){
 
@@ -55,7 +73,7 @@ float lerp(){
 void smoothUpdate(){
 
   // LERP for global light transition
-  currentBri = currentBri + alpha * (targetBri - currentBri);
+  currentBri = currentBri + 0.5 * (targetBri - currentBri);
   analogWrite(LED_TEST, currentBri);
 }
 
@@ -76,14 +94,6 @@ bool isNumber(const String &s) {
   return true; //Return Value: True if number else False
 }
 
-String mts_to_time(int mts){
-  //Converts the give minutes into Hour and Minutes Format
-  int time_hr = mts/60;
-  int time_mts = mts%60;
-
-  String time_now = String(time_hr) + ":" + String(time_mts);
-  return time_now; // returns in hh:mm format
-}
 
 void oldCheck(){
 
@@ -166,7 +176,7 @@ void weatherMode(){
     analogWrite(LED_TEST, constrain(currentRad, 0, 1023));
   }
 
-  if (strcmp(STATE,"DAY")==0 && data.radiation < 1 && currentTime()>ssend) {
+  if (strcmp(STATE,"DAY")==0 && currentTime()>ssend) {
     STATE = "NIGHT";
   }
   currentBri = currentRad;
@@ -178,10 +188,17 @@ void FullBrightness(){
   currentBri = 1023;
 }
 
-void CheckStatusCustom(){
-  if (CT_state == "ON") oldCheck();
-  else digitalWrite(LED_TEST, LOW);
+void customTime(){
+  if (currentTime() >= CusTimeOn){
+    oldCheck();
+    if (currentMode == off) digitalWrite(LED_TEST, HIGH);
+  }
+
+  else if (currentTime() >= CusTimeOff){
+    digitalWrite(LED_TEST, LOW);
+  }
 }
+
 
 void setup() {
 
@@ -213,6 +230,8 @@ void setup() {
   currentRad = initdata.radiation;
   sunriseTime = data.sunrise;
   sunsetTime = data.sunset;
+
+
   oldCheck();
 
   if (currentMode == CustomBri){
@@ -225,11 +244,12 @@ void setup() {
 
 void loop() {
 
+  
   if (!isWifiConnected()) digitalWrite(LED_BUILTIN_AUX, LOW);
   else digitalWrite(LED_BUILTIN_AUX , HIGH); 
 
   
-  //Telegram Bot Polling Limi
+  //Telegram Bot Polling Limit
   if (millis() - lastcallBOT >= intervalBOT){
     int numNewMessages = bot.getUpdates(lastUpdateId+1);
     while(numNewMessages){
@@ -261,7 +281,18 @@ void loop() {
 
   else if(currentMode == CustomBri) smoothUpdate();
 
+  else if(currentMode == CustomTime) customTime();
+
   else analogWrite(LED_TEST, 0);
+
+  Serial.print("STATE = ");
+  Serial.println(STATE);
+
+  Serial.print("ssend = ");
+  Serial.println(ssend);
+
+  Serial.print("currentTime = ");
+  Serial.println(currentTime());
 
   delay(20);
 

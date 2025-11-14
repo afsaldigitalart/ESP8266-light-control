@@ -14,6 +14,8 @@ static const char* keyboard =
 "  [\"Status\"], [\"OFF\"]"
 "]";
 
+WFCT waiting_for_ctime = DONE;
+
 void saveMode(uint8_t mode){
 
   //For saving the current mode in EEPROM memory, to continiue the same after a boot up
@@ -101,15 +103,54 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     }
   }
 
+  else if(text == "/customtime" || text == "customtime" || text == "/ct"){
+    bot.sendMessage(msg_id, "Send ON time (eg: 20:50): ");
+    waiting_for_ctime = WAITING_ON;
+    return;
+  }
+
+  if (waiting_for_ctime == WAITING_ON){
+    CusTimeOn = CTseparator(text, ":");
+    waiting_for_ctime = WAITING_OFF;
+    bot.sendMessage(msg_id, "Send OFF time: ");
+    return;
+}
+  if (waiting_for_ctime == WAITING_OFF){
+      CusTimeOff = CTseparator(text, ":");
+      waiting_for_ctime = DONE;
+      currentMode = CustomTime;
+      bot.sendMessage(msg_id, "All set!!");
+      return;
+}
+  
+
   else if(text == "/help" || text == "help"){
-    bot.sendMessage(msg_id, "◆ Do /start to activate the Keyboard ⌨️\n"
+    bot.sendMessage(msg_id, "\n◆ Do /start to activate the Keyboard ⌨️\n"
     "◆ Send numbers (0-100) to set custom Brightness! 🔅\n"
     "◆ /status to get Current Details 📑"
   );
 
+
   }
 
   else if(text == "/status" || text == "status"){
+    
+    String mode;
+    switch (currentMode){
+      case 0:
+        mode = "Off";
+        break;
+      case 1:
+        mode = "Weather Mode";
+        break;
+      case 2:
+        mode = "Full Brightness";
+        break;
+      case 3:
+        mode = "Custom Brightness";
+        break;
+
+    }
     
     String msg;
 
@@ -117,6 +158,9 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     msg += "➤ 🔅 _Brightness Level_: ";
     msg += String((currentBri * 100) / 1023);
     msg += "%\n";
+    msg += "➤ 🌈 _Current Mode_: ";
+    msg += mode;
+    msg += "\n";
     msg += "➤ ⚠️ _Sun Radiation Level_: ";
     msg += String(currentRad);
     msg += "\n";
@@ -132,9 +176,5 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
 
     bot.sendMessage(msg_id, msg, "Markdown");
   
-  }
-
-  else{
-    bot.sendMessage(msg_id, "Vere commands onnum allowed alla mwonuuu 😓");
   }
 }
