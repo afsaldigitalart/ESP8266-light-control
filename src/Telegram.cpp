@@ -175,4 +175,8 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     bot.sendMessage(msg_id, msg, "Markdown");
   
   }
+  if (text == "cancel" || text == "back"){
+    waiting_for_ctime = DONE;
+    return;
+  }
 }
