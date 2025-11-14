@@ -104,32 +104,30 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
   }
 
   else if(text == "/customtime" || text == "customtime" || text == "/ct"){
-    bot.sendMessage(msg_id, "Send ON time (eg: 20:50): ");
-    waiting_for_ctime = WAITING_ON;
+    bot.sendMessage(msg_id, "⏰ Send OFF Time (eg: 20:50):");
+    waiting_for_ctime = WAITING_OFF;
     return;
   }
 
-  if (waiting_for_ctime == WAITING_ON){
+  if (waiting_for_ctime == WAITING_OFF){
     CusTimeOn = CTseparator(text, ":");
-    waiting_for_ctime = WAITING_OFF;
-    bot.sendMessage(msg_id, "Send OFF time: ");
+    waiting_for_ctime = WAITING_ON;
+    bot.sendMessage(msg_id, "⏰ Send ON Time:");
     return;
 }
-  if (waiting_for_ctime == WAITING_OFF){
-      CusTimeOff = CTseparator(text, ":");
-      waiting_for_ctime = DONE;
-      currentMode = CustomTime;
-      bot.sendMessage(msg_id, "All set!!");
-      return;
+  if (waiting_for_ctime == WAITING_ON){
+    CusTimeOff = CTseparator(text, ":");
+    waiting_for_ctime = DONE;
+    currentMode = CustomTime;
+    bot.sendMessage(msg_id, "🔥 All Set!!");
+    return;
 }
   
-
   else if(text == "/help" || text == "help"){
     bot.sendMessage(msg_id, "\n◆ Do /start to activate the Keyboard ⌨️\n"
     "◆ Send numbers (0-100) to set custom Brightness! 🔅\n"
     "◆ /status to get Current Details 📑"
   );
-
 
   }
 

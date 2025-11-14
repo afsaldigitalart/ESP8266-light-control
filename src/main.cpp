@@ -191,7 +191,7 @@ void FullBrightness(){
 void customTime(){
   if (currentTime() >= CusTimeOn){
     oldCheck();
-    if (currentMode == off) digitalWrite(LED_TEST, HIGH);
+    if (currentMode == off) currentMode= fullBri;
   }
 
   else if (currentTime() >= CusTimeOff){
@@ -230,7 +230,6 @@ void setup() {
   currentRad = initdata.radiation;
   sunriseTime = data.sunrise;
   sunsetTime = data.sunset;
-
 
   oldCheck();
 
@@ -285,14 +284,11 @@ void loop() {
 
   else analogWrite(LED_TEST, 0);
 
-  Serial.print("STATE = ");
-  Serial.println(STATE);
+  Serial.print("STATE: "); Serial.println(STATE);
+  Serial.print("ssend: "); Serial.println(ssend);
+  Serial.print("ctime: "); Serial.println(currentTime());
+  Serial.print("radiation: "); Serial.println(data.radiation);
 
-  Serial.print("ssend = ");
-  Serial.println(ssend);
-
-  Serial.print("currentTime = ");
-  Serial.println(currentTime());
 
   delay(20);
 
