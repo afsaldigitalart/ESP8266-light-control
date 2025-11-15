@@ -40,7 +40,7 @@ void handleMessage(UniversalTelegramBot &bot, int index){
   }
 
   if(!allowed){
-    bot.sendMessage(msg_id, "Nigga you ain't allowed to talk with me!", "");
+    bot.sendMessage(msg_id, "*You ain't allowed to talk with me!*", "Markdown");
     return;
   }
 
@@ -117,7 +117,7 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
   }
 
   if (waiting_for_ctime == WAITING_OFF){
-    CusTimeOn = CTseparator(text, ":");
+    CusTimeOff = CTseparator(text, ":");
     waiting_for_ctime = WAITING_ON;
     
     if (text == "cancel" || text == "back"){
@@ -130,7 +130,7 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     return;
 }
   if (waiting_for_ctime == WAITING_ON){
-    CusTimeOff = CTseparator(text, ":");
+    CusTimeOn = CTseparator(text, ":");
     waiting_for_ctime = DONE;
     currentMode = CustomTime;
     bot.sendMessage(msg_id, "🔥 All Set!!");
@@ -138,7 +138,7 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
 }
   
   else if(text == "/help" || text == "help"){
-    bot.sendMessage(msg_id, "\n◆ Do /start to activate the Keyboard ⌨️\n"
+    bot.sendMessage(msg_id, "\n◆ Do /start to activate the Keyboard\n"
     "◆ Send numbers (0-100) to set custom Brightness! 🔅\n"
     "◆ /status to get Current Details 📑"
   );
@@ -169,24 +169,30 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     
     String msg;
 
-    msg  = "*Current Status*\n";
-    msg += "➤ 🔅 _Brightness Level_: ";
+    msg  = "*\t📊 Status*\t\n";
+    msg += "-------------------------------------\n";
+    msg += " 🔅: ";
     msg += String((currentBri * 100) / 1023);
-    msg += "%\n";
-    msg += "➤ 🌈 _Current Mode_: ";
+    msg += "% | ";
+    msg += " 🌈: ";
     msg += mode;
-    msg += "\n";
-    msg += "➤ ⚠️ _Sun Radiation Level_: ";
+    msg += "\n\n";
+    msg += " ☀️ *Sun Level*: ";
     msg += String(currentRad);
+    msg += " | ";
+    msg += " 🕗 *Time*: ";
+    msg += mts_to_time(currentTime());
     msg += "\n";
-    msg += "➤ 🌅 _Sunrise Time_: ";
+    msg += "------------------------------------\n";
+    msg += "➤ 🌅 ";
     msg += mts_to_time(sunriseTime);
-    msg += "\n";
-    msg += "➤ 🌇 _Sunset Time_: ";
+    msg += " -> ";
+    msg += " 🌇 ";
     msg += mts_to_time(sunsetTime);
     msg += "\n";
-    msg += "➤ ⌚ _Current Time_: ";
-    msg += mts_to_time(currentTime());
+    msg += "------------------------------------\n";
+    msg += "➤ 🏃‍♀️ *Runtime*: ";
+    msg += mts_to_time(RunTime);
     msg += "\n";
 
     bot.sendMessage(msg_id, msg, "Markdown");
