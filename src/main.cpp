@@ -26,9 +26,11 @@ int srstart = -1, srend = -1, ssstart = -1, ssend = -1;
 const char* STATE = "DAY";
 int lastss = -1, lastsr = -1;
 
-int currentBri = 0;
-int targetBri = 0;
+float currentBri = 0;
+float targetBri = 0;
 
+int RunTime = 0;
+int StartTime;
 
 
 //HELPER FUNCTIONS
@@ -59,6 +61,12 @@ String mts_to_time(int mts){
   return time_now; // returns in hh:mm format
 }
 
+bool inWindow(int now, int start, int duration) {
+    int day = 1440; 
+    int delta = (now + day - start) % day;
+    return delta < duration;
+}
+
 float lerp(){
 
   // Linear Interpolation. For smooth transition between different brightness
@@ -67,14 +75,14 @@ float lerp(){
   float progress;
 
   if (strcmp(STATE, "SUNRISE")==0){
-    progress = (currentTime() - srstart)/25;
+    progress = float((currentTime() - srstart)/25);
     progress = constrain(progress, 0, 1);
 
     targetRad = progress * data.radiation;
   }
 
   else if (strcmp(STATE, "SUNSET")==0){
-    progress = (currentTime() - ssstart)/30;
+    progress = float((currentTime() - ssstart)/30);
     progress = constrain(progress, 0, 1);
 
     targetRad = (1.0-progress) * data.radiation;
@@ -132,12 +140,19 @@ void oldCheck(){
   }
 }
 
+int gammaCorrect(int lvl) {
+    float gamma = 2.2;   
+    float normalized = lvl / 100.0;
+    float corrected = pow(normalized, gamma);
+    return int(corrected * 1023);
+}
+
 void setBrightness(int lvl){
 
   //For setting Custom Brightness according to the input
   currentMode = CustomBri;
 
-  int brighness = map(lvl, 0, 100, 0, 1023);
+  int brighness = gammaCorrect(lvl);
   brighness = constrain(brighness, 0, 1023);
   targetBri = brighness;
 
@@ -149,16 +164,14 @@ void setBrightness(int lvl){
 void weatherMode(){
   
   //Main Logic for Weather mode. Calls API and changes the brighness according to it
-  if (currentTime() >= data.sunrise && currentTime() < data.sunrise+25
-  &&lastsr != todayDay() && strcmp(STATE,"SUNRISE") != 0){
+  if ( inWindow(currentTime(), data.sunrise, 1) && lastsr != todayDay()){
     STATE   = "SUNRISE";
     srstart = currentTime();
     srend   = srstart + 25;
     lastsr  = todayDay();
   }
 
-  if ( currentTime() >= data.sunset - 25  && currentTime() < data.sunset + 2 
-  && lastss != todayDay()&& strcmp(STATE,"SUNSET") != 0){
+  if ( inWindow(currentTime(), data.sunset, 1) && lastss != todayDay()){
     STATE   = "SUNSET";
     ssstart = currentTime();
     ssend   = ssstart + 30;
@@ -186,15 +199,9 @@ void weatherMode(){
   }
   
   else if (strcmp(STATE, "DAY") == 0){
-    float targetRad = data.radiation;
-    float difference = abs(targetRad - currentRad);
 
-    if (difference > 100) {
-      currentRad = targetRad; // Snap to target for large jumps
-    } else {
-      currentRad += 0.15 * (targetRad - currentRad); // Smooth for small changes
-    }
-    
+    float targetRad = data.radiation;
+    currentRad += 0.15 * (targetRad - currentRad);
     analogWrite(LED_TEST, constrain(currentRad, 0, 1023));
   }
 
@@ -229,7 +236,6 @@ void customTime(){
 
 void setup() {
 
-  Serial.begin(115200);
   EEPROM.begin(4); 
 
   pinMode(LED_BUILTIN_AUX, OUTPUT);
@@ -257,6 +263,7 @@ void setup() {
   currentRad = initdata.radiation;
   sunriseTime = data.sunrise;
   sunsetTime = data.sunset;
+  StartTime = millis();
 
 
   oldCheck();
@@ -293,11 +300,10 @@ void loop() {
 
   //API Call Limit
   if (millis() - lastcallSun >= intervalSun){
+    
     data = apiCall();
 
     lastcallSun = millis();
-    Serial.print("Current Brigtness : ");
-    Serial.println(currentRad);
     sunriseTime = data.sunrise;
     sunsetTime = data.sunset;
   }
@@ -312,13 +318,8 @@ void loop() {
 
   else analogWrite(LED_TEST, 0);
 
-  Serial.print("STATE: "); Serial.println(STATE);
-  Serial.print("srend: "); Serial.println(srend);
-  Serial.print("ctime: "); Serial.println(currentTime());
-  Serial.print("radiation: "); Serial.println(data.radiation);
-
-
-  delay(20);
+  RunTime = (millis() - StartTime)/60000;
+  delay(1);
 
 }
 
