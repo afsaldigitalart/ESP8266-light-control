@@ -13,15 +13,17 @@ enum MODE{
 };
 extern MODE currentMode;
 
-extern int currentBri;
+extern float currentBri;
 extern float currentRad;
 extern int sunriseTime;
 extern int sunsetTime;
 extern int CusTimeOn;
 extern int CusTimeOff;
 extern String mode;
+extern int RunTime;
 
 float lerp();
+bool inWindow(int now, int start, int duration);
 void weatherMode();
 void FullBrightness();
 void oldCheck();
