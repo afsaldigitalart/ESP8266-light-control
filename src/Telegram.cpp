@@ -11,6 +11,7 @@
 static const char* keyboard =
 "["
 "  [\"Weather Mode\", \"Full Brightness\"],"
+"  [\"Custom Time\"],"
 "  [\"Status\"], [\"OFF\"]"
 "]";
 
@@ -103,8 +104,14 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     }
   }
 
-  else if(text == "/customtime" || text == "customtime" || text == "/ct"){
+  else if(text == "/customtime" || text == "custom time" || text == "/ct"){
     bot.sendMessage(msg_id, "⏰ Send OFF Time (eg: 20:50):");
+
+    if (text == "cancel" || text == "back"){
+      waiting_for_ctime = DONE;
+      bot.sendMessage(msg_id, "❌ Operation Cancelled!");
+      return;
+    }
     waiting_for_ctime = WAITING_OFF;
     return;
   }
@@ -112,6 +119,13 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
   if (waiting_for_ctime == WAITING_OFF){
     CusTimeOn = CTseparator(text, ":");
     waiting_for_ctime = WAITING_ON;
+    
+    if (text == "cancel" || text == "back"){
+      waiting_for_ctime = DONE;
+      bot.sendMessage(msg_id, "❌ Operation Cancelled!");
+      return;
+    }
+
     bot.sendMessage(msg_id, "⏰ Send ON Time:");
     return;
 }
@@ -147,6 +161,9 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
       case 3:
         mode = "Custom Brightness";
         break;
+      case 4:
+        mode = "Custom Timer";
+        break;
 
     }
     
@@ -175,8 +192,5 @@ void logicHandling(UniversalTelegramBot &bot, const String &text, const String &
     bot.sendMessage(msg_id, msg, "Markdown");
   
   }
-  if (text == "cancel" || text == "back"){
-    waiting_for_ctime = DONE;
-    return;
-  }
+
 }

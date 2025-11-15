@@ -62,10 +62,26 @@ String mts_to_time(int mts){
 float lerp(){
 
   // Linear Interpolation. For smooth transition between different brightness
-  float progress = (currentTime() - srstart)/25;
-  progress = constrain(progress, 0, 1);
 
-  float targetRad = progress * data.radiation;
+  float targetRad;
+  float progress;
+
+  if (strcmp(STATE, "SUNRISE")==0){
+    progress = (currentTime() - srstart)/25;
+    progress = constrain(progress, 0, 1);
+
+    targetRad = progress * data.radiation;
+  }
+
+  else if (strcmp(STATE, "SUNSET")==0){
+    progress = (currentTime() - ssstart)/30;
+    progress = constrain(progress, 0, 1);
+
+    targetRad = (1.0-progress) * data.radiation;
+  }
+
+  else targetRad = currentRad;
+
   currentRad += 0.1 * (targetRad - currentRad);
   return currentRad; //Return value: Current Radiation (the brightness level actually)
 }
@@ -133,14 +149,16 @@ void setBrightness(int lvl){
 void weatherMode(){
   
   //Main Logic for Weather mode. Calls API and changes the brighness according to it
-  if (currentTime() >= data.sunrise && lastsr != todayDay() && strcmp(STATE,"SUNRISE") != 0){
+  if (currentTime() >= data.sunrise && currentTime() < data.sunrise+25
+  &&lastsr != todayDay() && strcmp(STATE,"SUNRISE") != 0){
     STATE   = "SUNRISE";
     srstart = currentTime();
     srend   = srstart + 25;
     lastsr  = todayDay();
   }
 
-  if ( currentTime() >= data.sunset - 25 && lastss != todayDay() && strcmp(STATE,"SUNSET") != 0){
+  if ( currentTime() >= data.sunset - 25  && currentTime() < data.sunset + 2 
+  && lastss != todayDay()&& strcmp(STATE,"SUNSET") != 0){
     STATE   = "SUNSET";
     ssstart = currentTime();
     ssend   = ssstart + 30;
@@ -150,10 +168,11 @@ void weatherMode(){
   if (strcmp(STATE, "SUNRISE") == 0) {
     
     analogWrite(LED_TEST, lerp());
-
-    if(currentTime() > srend){
-    STATE = "DAY";
+    if(currentTime() >= srend){
+        STATE = "DAY";
+        currentRad = data.radiation;
     }
+    
   }
 
   else if (strcmp(STATE, "SUNSET")==0){
@@ -162,12 +181,20 @@ void weatherMode(){
 
     if(currentTime() > ssend){
       STATE = "NIGHT";
+      currentRad = 0;
     }
   }
   
   else if (strcmp(STATE, "DAY") == 0){
     float targetRad = data.radiation;
-    currentRad += 0.08 * (targetRad - currentRad);
+    float difference = abs(targetRad - currentRad);
+
+    if (difference > 100) {
+      currentRad = targetRad; // Snap to target for large jumps
+    } else {
+      currentRad += 0.15 * (targetRad - currentRad); // Smooth for small changes
+    }
+    
     analogWrite(LED_TEST, constrain(currentRad, 0, 1023));
   }
 
@@ -176,7 +203,7 @@ void weatherMode(){
     analogWrite(LED_TEST, constrain(currentRad, 0, 1023));
   }
 
-  if (strcmp(STATE,"DAY")==0 && currentTime()>ssend) {
+  if (strcmp(STATE,"DAY")==0 && currentTime()>data.sunset) {
     STATE = "NIGHT";
   }
   currentBri = currentRad;
@@ -230,6 +257,7 @@ void setup() {
   currentRad = initdata.radiation;
   sunriseTime = data.sunrise;
   sunsetTime = data.sunset;
+
 
   oldCheck();
 
@@ -285,7 +313,7 @@ void loop() {
   else analogWrite(LED_TEST, 0);
 
   Serial.print("STATE: "); Serial.println(STATE);
-  Serial.print("ssend: "); Serial.println(ssend);
+  Serial.print("srend: "); Serial.println(srend);
   Serial.print("ctime: "); Serial.println(currentTime());
   Serial.print("radiation: "); Serial.println(data.radiation);
 
